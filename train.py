@@ -2,11 +2,12 @@ import torch
 import torch.nn as nn
 import numpy as np
 from torch.utils.data import DataLoader
+from torchvision import transforms
 from uwcc import uwcc
 import os
 import shutil
 import sys
-from unified_model import UnifiedEnhanceSuperResNet
+from model import UnifiedEnhanceSuperResNet
 
 def main():
     best_loss = 9999.0
@@ -17,8 +18,8 @@ def main():
     epochs = 3000
     ori_fd = sys.argv[1]
     ucc_fd = sys.argv[2]
-    ori_dirs = [os.path.join(ori_fd, f) for f in os.listdir(ori_fd)]
-    ucc_dirs = [os.path.join(ucc_fd, f) for f in os.listdir(ucc_fd)]
+    ori_files = [os.path.join(ori_fd, f) for f in os.listdir(ori_fd) if os.path.isfile(os.path.join(ori_fd, f))]
+    ucc_files = [os.path.join(ucc_fd, f) for f in os.listdir(ucc_fd) if os.path.isfile(os.path.join(ucc_fd, f))]
 
     # Create model
     model = UnifiedEnhanceSuperResNet(upscale_factor=2)
@@ -33,7 +34,10 @@ def main():
     criterion = nn.MSELoss()
 
     # Load data
-    trainset = uwcc(ori_dirs, ucc_dirs, train=True)
+    trainset = uwcc(ori_files, ucc_files, transform=transforms.Compose([
+        transforms.Resize((240, 320)),
+        transforms.ToTensor()
+    ]))
     trainloader = DataLoader(trainset, batch_size=batchsize, shuffle=True, num_workers=n_workers)
 
     # Train
@@ -60,7 +64,11 @@ def train(trainloader, model, optimizer, criterion, epoch):
         ucc = ucc.cuda()
 
         corrected = model(ori)
-        loss = criterion(corrected, ucc)
+
+        # Resize the ground truth to match the corrected output dimensions
+        ucc_resized = nn.functional.interpolate(ucc, size=(corrected.size(2), corrected.size(3)), mode='bilinear', align_corners=False)
+
+        loss = criterion(corrected, ucc_resized)
         losses.update(loss.item(), ori.size(0))
 
         optimizer.zero_grad()

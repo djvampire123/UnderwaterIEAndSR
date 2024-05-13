@@ -9,14 +9,14 @@ class UnifiedEnhanceSuperResNet(nn.Module):
         # Enhancement layers
         self.backscatter_conv1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
         self.backscatter_conv2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
-        self.backscatter_pool = nn.AdaptiveAvgPool2d(1)
+        self.backscatter_pool = nn.AdaptiveAvgPool2d((1, 1))
         self.backscatter_fc1 = nn.Conv2d(64, 32, kernel_size=1)
         self.backscatter_fc2 = nn.Conv2d(32, 3, kernel_size=1)
 
         self.direct_conv1 = nn.Conv2d(3, 64, kernel_size=3, padding=1)
-        self.direct_conv2 = nn.Conv2d(64, 64, kernel_size=3, padding=1, dilation=1)
-        self.direct_conv3 = nn.Conv2d(64, 64, kernel_size=3, padding=1, dilation=2)
-        self.direct_conv4 = nn.Conv2d(64, 64, kernel_size=3, padding=1, dilation=5)
+        self.direct_conv2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.direct_conv3 = nn.Conv2d(64, 64, kernel_size=3, padding=1, dilation=1)
+        self.direct_conv4 = nn.Conv2d(64, 64, kernel_size=3, padding=2, dilation=2)
         self.direct_conv5 = nn.Conv2d(64, 3, kernel_size=3, padding=1)
 
         # Super-resolution layers
@@ -41,6 +41,7 @@ class UnifiedEnhanceSuperResNet(nn.Module):
         b_pool = self.backscatter_pool(b2)
         b_fc1 = F.relu(self.backscatter_fc1(b_pool))
         backscatter = torch.sigmoid(self.backscatter_fc2(b_fc1))
+        backscatter = F.interpolate(backscatter, size=(x.size(2), x.size(3)), mode='bilinear', align_corners=False)
 
         d1 = F.relu(self.direct_conv1(x))
         d2 = F.relu(self.direct_conv2(d1))
