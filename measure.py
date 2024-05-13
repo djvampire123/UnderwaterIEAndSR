@@ -1,14 +1,3 @@
-#!/usr/bin/env python
-"""
-# > Script for measuring quantitative performances in terms of
-#    - Underwater Image Quality Measure (UIQM)
-#    - Structural Similarity Metric (SSIM) 
-#    - Peak Signal to Noise Ratio (PSNR)
-#
-# Maintainer: Jahid (email: islam034@umn.edu)
-# Interactive Robotics and Vision Lab (http://irvlab.cs.umn.edu/)
-# Any part of this repo can be used for academic and educational purposes only
-"""
 ## python libs
 import os
 import ntpath
