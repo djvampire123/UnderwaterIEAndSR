@@ -22,6 +22,10 @@ class uwcc(Dataset):
         self.ori_images.sort()
         self.ucc_images.sort()
 
+        # Check if the lengths of the image lists are equal
+        if len(self.ori_images) != len(self.ucc_images):
+            raise ValueError("The number of original images and ground truth images do not match.")
+
     def __len__(self):
         return len(self.ori_images)
 
@@ -29,8 +33,13 @@ class uwcc(Dataset):
         ori_image_path = self.ori_images[idx]
         ucc_image_path = self.ucc_images[idx]
         
-        ori_image = Image.open(ori_image_path).convert('RGB')
-        ucc_image = Image.open(ucc_image_path).convert('RGB')
+        try:
+            ori_image = Image.open(ori_image_path).convert('RGB')
+            ucc_image = Image.open(ucc_image_path).convert('RGB')
+        except Exception as e:
+            print(f"Error loading image pair: {ori_image_path}, {ucc_image_path}")
+            print(e)
+            return None, None
 
         if self.transform:
             ori_image = self.transform(ori_image)

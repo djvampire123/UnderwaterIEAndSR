@@ -5,7 +5,7 @@ from PIL import Image
 import os
 import sys
 import numpy as np
-from unified_model import UnifiedEnhanceSuperResNet
+from model import UnifiedEnhanceSuperResNet  # Corrected import
 
 def load_image(image_path, transform=None):
     image = Image.open(image_path).convert('RGB')

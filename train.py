@@ -7,14 +7,15 @@ from uwcc import uwcc
 import os
 import shutil
 import sys
+import torch.multiprocessing as mp
 from model import UnifiedEnhanceSuperResNet
 
 def main():
     best_loss = 9999.0
 
     lr = 0.001
-    batchsize = 1
-    n_workers = 2
+    batchsize = 16
+    n_workers = 4
     epochs = 3000
     ori_fd = sys.argv[1]
     ucc_fd = sys.argv[2]
@@ -38,7 +39,7 @@ def main():
         transforms.Resize((240, 320)),
         transforms.ToTensor()
     ]))
-    trainloader = DataLoader(trainset, batch_size=batchsize, shuffle=True, num_workers=n_workers)
+    trainloader = DataLoader(trainset, batch_size=batchsize, shuffle=True, num_workers=n_workers, pin_memory=True)
 
     # Train
     for epoch in range(epochs):
@@ -60,6 +61,9 @@ def train(trainloader, model, optimizer, criterion, epoch):
 
     for i, sample in enumerate(trainloader):
         ori, ucc = sample
+        if ori is None or ucc is None:
+            continue
+
         ori = ori.cuda()
         ucc = ucc.cuda()
 
@@ -79,7 +83,7 @@ def train(trainloader, model, optimizer, criterion, epoch):
 
 def save_checkpoint(state, is_best):
     """Saves checkpoint to disk"""
-    freq = 500
+    freq = 100
     epoch = state['epoch']
     filename = './checkpoints/model_tmp.pth.tar'
     if not os.path.exists('./checkpoints'):
@@ -109,4 +113,5 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
 if __name__ == '__main__':
+    mp.set_start_method('spawn')  # Set multiprocessing start method to 'spawn'
     main()
